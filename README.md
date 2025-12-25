@@ -1,88 +1,137 @@
 # 🚪 ms-api-gateway
 
-Единая точка входа в систему из 4 микросервисов:
-
-- ms-warehouse  (по умолчанию `http://localhost:8081`)
-- ms-delivery   (по умолчанию `http://localhost:8082`)
-- ms-customer   (по умолчанию `http://localhost:8083`)
-- ms-payment-service (по умолчанию `http://localhost:8084`)
-
-Gateway поднимается на `http://localhost:8080` и проксирует **все ручки** каждого сервиса под отдельным префиксом.
+`ms-api-gateway` — единая точка входа в систему (API Gateway) на базе **Spring Cloud Gateway**.  
+Проксирует запросы во все микросервисы по префиксам, агрегирует Swagger-документацию и готов к централизованному логированию/аудиту.
 
 ---
 
-## ✅ Как пользоваться (локально, Windows)
+## 🧭 Маршрутизация (единый вход)
 
-1) Запусти все 4 микросервиса как обычно (каждый на своём порту).
+Gateway стартует на:
 
-2) Запусти gateway:
+👉 `http://localhost:8080`
 
-```bat
-.\gradlew clean bootRun
+Префиксы сервисов:
+
+- **Warehouse** → `http://localhost:8080/warehouse/**`  → `http://localhost:8081/**`
+- **Delivery**  → `http://localhost:8080/delivery/**`   → `http://localhost:8082/**`
+- **Customer**  → `http://localhost:8080/customer/**`   → `http://localhost:8083/**`
+- **Payment**   → `http://localhost:8080/payment/**`    → `http://localhost:8084/**`
+
+> Внутри gateway используется `StripPrefix=1`, поэтому сервисы получают “родные” пути без префикса.
+
+---
+
+## 📚 Swagger UI (агрегированный)
+
+Единый Swagger UI на gateway:
+
+👉 `http://localhost:8080/swagger-ui.html`
+
+Там доступны спецификации всех сервисов (выбор через выпадающий список).
+
+---
+
+## 🚀 Запуск сервиса
+
+Перед запуском убедитесь, что установлены **JDK 21** и проект собирается через **Gradle Wrapper**.
+
+### 🔨 Сборка
+
+```bash
+.\gradlew clean build -x test
+```
+
+### ▶️ Запуск локально
+
+```bash
+.\gradlew bootRun
 ```
 
 ---
 
-## 🧭 Маршрутизация (все ручки доступны)
+## ⚙️ Конфигурация (порты/URL)
 
-| Сервис | Было | Стало через gateway |
-|------:|------|---------------------|
-| warehouse | `http://localhost:8081/**` | `http://localhost:8080/warehouse/**` |
-| delivery  | `http://localhost:8082/**` | `http://localhost:8080/delivery/**` |
-| customer  | `http://localhost:8083/**` | `http://localhost:8080/customer/**` |
-| payment   | `http://localhost:8084/**` | `http://localhost:8080/payment/**` |
+По умолчанию gateway слушает `8080`, а сервисы доступны по:
 
-### Swagger каждого сервиса через gateway
+- warehouse: `http://localhost:8081`
+- delivery: `http://localhost:8082`
+- customer: `http://localhost:8083`
+- payment: `http://localhost:8084`
 
-- Warehouse: `http://localhost:8080/warehouse/swagger-ui/index.html`
-- Delivery:  `http://localhost:8080/delivery/swagger-ui/index.html`
-- Customer:  `http://localhost:8080/customer/swagger-ui/index.html`
-- Payment:   `http://localhost:8080/payment/swagger-ui/index.html`
+Порт gateway можно изменить через переменную окружения:
+
+- `SERVER_PORT` (по умолчанию `8080`)
 
 ---
 
-## 🧾 Журналирование “из коробки”
-
-Gateway добавляет и прокидывает заголовок `X-Request-Id`:
-
-- если клиент прислал — прокидываем дальше;
-- если не прислал — генерируем UUID;
-- всегда возвращаем его клиенту в ответе.
-
-Плюс пишет access-log на каждый запрос:
-
-```
-requestId=... method=... path=... status=... durationMs=...
-```
-
----
-
-## 📈 Actuator / метрики
+## 🔎 Actuator / Metrics
 
 - Health: `http://localhost:8080/actuator/health`
 - Prometheus: `http://localhost:8080/actuator/prometheus`
 
 ---
 
-## ⚙️ Переменные окружения (если нужно переопределить)
+## 🧾 Логирование / Корреляция запросов
 
-| Ключ | По умолчанию |
-|-----|--------------|
-| `SERVER_PORT` | `8080` |
-| `WAREHOUSE_URL` | `http://localhost:8081` |
-| `DELIVERY_URL`  | `http://localhost:8082` |
-| `CUSTOMER_URL`  | `http://localhost:8083` |
-| `PAYMENT_URL`   | `http://localhost:8084` |
+Gateway генерирует и/или прокидывает `X-Request-Id` и пишет access-логи вида:
+
+- requestId
+- method
+- path
+- status
+- durationMs
+
+Это база для будущего:
+- централизованного аудита,
+- распределённого трейсинга,
+- журналирования действий пользователей.
 
 ---
 
-## 🐳 Docker (опционально)
+## 🌐 CORS
 
-Если хочешь запускать gateway в Docker, а сервисы — локально (на хосте), можно использовать `host.docker.internal`:
+Включён глобальный CORS для всех путей (`[/**]`) — разрешены методы/заголовки `*`,
+а также `X-Request-Id` добавлен в `exposedHeaders`.
 
-```yaml
-WAREHOUSE_URL: http://host.docker.internal:8081
-DELIVERY_URL:  http://host.docker.internal:8082
-CUSTOMER_URL:  http://host.docker.internal:8083
-PAYMENT_URL:   http://host.docker.internal:8084
+---
+
+## 🧩 Используемые технологии
+
+- Java 21
+- Spring Boot 3
+- Spring Cloud Gateway (WebFlux)
+- Springdoc OpenAPI (WebFlux UI)
+- Actuator + Prometheus
+- Docker (опционально)
+
+---
+
+## 🛠️ Troubleshooting
+
+### Swagger UI “Try it out” бьёт не туда / 404
+
+Проверь:
+
+- routes в gateway настроены с `StripPrefix=1`
+- Swagger UI открыт именно на `http://localhost:8080/swagger-ui.html`
+- сервисы отдают корректный `servers.url` для работы за префиксом gateway (`/warehouse`, `/delivery`, `/customer`, `/payment`)
+
+### Ошибка Gradle Wrapper
+
+Если `./gradlew` падает (например, `NoClassDefFoundError`), пересоздай wrapper командой `wrapper` из любого рабочего сервиса
+или установи Gradle и выполни `gradle wrapper`.
+
+---
+
+## ✅ Пример вызова через gateway (PowerShell)
+
+Получить JWT (если auth реализован в warehouse):
+
+```powershell
+$body = @{ username="demo"; password="demo" } | ConvertTo-Json
+Invoke-RestMethod -Method Post `
+  -Uri "http://localhost:8080/warehouse/api/auth/authenticate" `
+  -ContentType "application/json" `
+  -Body $body
 ```
