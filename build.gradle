@@ -21,16 +21,6 @@ ext {
     set('springCloudVersion', "2023.0.1")
 }
 
-//dependencies {
-//    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
-//    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
-//    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-//    implementation 'io.micrometer:micrometer-registry-prometheus'
-//
-//    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-//    testImplementation 'io.projectreactor:reactor-test'
-//}
-
 dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
 
