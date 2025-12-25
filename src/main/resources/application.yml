@@ -1,0 +1,78 @@
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: ms-api-gateway
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      routes:
+        - id: warehouse
+          uri: http://localhost:8081
+          predicates:
+            - Path=/warehouse/**
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=X-Forwarded-Prefix
+
+        - id: delivery
+          uri: http://localhost:8082
+          predicates:
+            - Path=/delivery/**
+          filters:
+            - StripPrefix=1
+
+        - id: customer
+          uri: http://localhost:8083
+          predicates:
+            - Path=/customer/**
+          filters:
+            - StripPrefix=1
+
+        - id: payment
+          uri: http://localhost:8084
+          predicates:
+            - Path=/payment/**
+          filters:
+            - StripPrefix=1
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            exposedHeaders:
+              - X-Request-Id
+            allowCredentials: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: warehouse
+        url: /warehouse/v3/api-docs
+      - name: delivery
+        url: /delivery/v3/api-docs
+      - name: customer
+        url: /customer/v3/api-docs
+      - name: payment
+        url: /payment/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: WARN
