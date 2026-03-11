@@ -34,7 +34,7 @@ spring:
             - StripPrefix=1
 
         - id: payment
-          uri: http://localhost:8084
+          uri: ${PAYMENT_URL:http://localhost:8084}
           predicates:
             - Path=/payment/**
           filters:
