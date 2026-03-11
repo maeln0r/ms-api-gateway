@@ -12,7 +12,7 @@ spring:
     gateway:
       routes:
         - id: warehouse
-          uri: http://localhost:8081
+          uri: ${WAREHOUSE_URL:http://localhost:8081}
           predicates:
             - Path=/warehouse/**
           filters:
@@ -76,4 +76,3 @@ logging:
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty.http.client: WARN
-
