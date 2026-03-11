@@ -27,7 +27,7 @@ spring:
             - StripPrefix=1
 
         - id: customer
-          uri: http://localhost:8083
+          uri: ${CUSTOMER_URL:http://localhost:8083}
           predicates:
             - Path=/customer/**
           filters:
@@ -76,3 +76,4 @@ logging:
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty.http.client: WARN
+
