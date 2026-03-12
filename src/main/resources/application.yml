@@ -63,6 +63,11 @@ springdoc:
       - name: payment
         url: /payment/v3/api-docs
 
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: WARN
+
 management:
   endpoints:
     web:
@@ -70,9 +75,6 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
+      probes:
+        enabled: true
       show-details: always
-
-logging:
-  level:
-    org.springframework.cloud.gateway: INFO
-    reactor.netty.http.client: WARN
